@@ -2,11 +2,12 @@
 #include <openssl/bn.h>
 #include <string.h>
 
-typedef struct _b12rsa_st {
+typedef struct _b12rsa_st
+{
     BIGNUM *e;
     BIGNUM *d;
     BIGNUM *n;
-}BOB12_RSA;
+} BOB12_RSA;
 
 // assignment #1
 BIGNUM *XEuclid(BIGNUM *x, BIGNUM *y, const BIGNUM *a, const BIGNUM *b)
@@ -62,10 +63,13 @@ int myExpMod(BIGNUM *r, const BIGNUM *a, const BIGNUM *e, BIGNUM *m)
     BIGNUM *temp_e = BN_new();
     BN_copy(temp_e, e);
 
-    while (!BN_is_zero(temp_e)) {
+    while (!BN_is_zero(temp_e))
+    {
         // If temp_e is odd, multiply r with a and take the modulo m
-        if (BN_is_odd(temp_e)) {
-            if (!BN_mod_mul(r, r, temp_a, m, BN_CTX_new())) {
+        if (BN_is_odd(temp_e))
+        {
+            if (!BN_mod_mul(r, r, temp_a, m, BN_CTX_new()))
+            {
                 BN_free(one);
                 BN_free(temp_a);
                 BN_free(temp_e);
@@ -74,7 +78,8 @@ int myExpMod(BIGNUM *r, const BIGNUM *a, const BIGNUM *e, BIGNUM *m)
         }
 
         // Square a and take the modulo m
-        if (!BN_mod_mul(temp_a, temp_a, temp_a, m, BN_CTX_new())) {
+        if (!BN_mod_mul(temp_a, temp_a, temp_a, m, BN_CTX_new()))
+        {
             BN_free(one);
             BN_free(temp_a);
             BN_free(temp_e);
@@ -82,7 +87,8 @@ int myExpMod(BIGNUM *r, const BIGNUM *a, const BIGNUM *e, BIGNUM *m)
         }
 
         // Right-shift temp_e by 1 (equivalent to integer division by 2)
-        if (!BN_rshift1(temp_e, temp_e)) {
+        if (!BN_rshift1(temp_e, temp_e))
+        {
             BN_free(one);
             BN_free(temp_a);
             BN_free(temp_e);
@@ -164,24 +170,25 @@ int BOB12_RSA_KeyGen(BOB12_RSA *b12rsa, int nBits)
     return 1;
 }
 
-
 // RSA 암호화 함수
 // 입력 : 공개키를 포함한 b12rsa, 메시지 m
 // 출력 : 암호문 c
 int BOB12_RSA_Enc(BIGNUM *c, BIGNUM *m, BOB12_RSA *b12rsa)
 {
     myExpMod(c, m, b12rsa->e, b12rsa->n);
-    BN_print_fp(stdout, c);
+    // BN_mod_exp(c, m, b12rsa->e,
+    //            b12rsa->n, BN_CTX_new());
     return 1;
 }
 
 // RSA 복호화 함수
-//입력 : 공개키를 포함한 b12rsa, 암호문 c
-//출력 : 평문 m
+// 입력 : 공개키를 포함한 b12rsa, 암호문 c
+// 출력 : 평문 m
 int BOB12_RSA_Dec(BIGNUM *m, BIGNUM *c, BOB12_RSA *b12rsa)
 {
     myExpMod(m, c, b12rsa->d, b12rsa->n);
-    BN_print_fp(stdout, m);
+    // BN_mod_exp(m, c, b12rsa->d,
+    //            b12rsa->n, BN_CTX_new());
     return 1;
 }
 void PrintUsage()
@@ -189,49 +196,71 @@ void PrintUsage()
     printf("usage: rsa [-k|-e e n plaintext|-d d n ciphertext]\n");
 }
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     BOB12_RSA *b12rsa = BOB12_RSA_new();
     BIGNUM *in = BN_new();
     BIGNUM *out = BN_new();
 
-    if(argc == 2){
-        if(strncmp(argv[1],"-k",2)){
+    if (argc == 2)
+    {
+        if (strncmp(argv[1], "-k", 2))
+        {
             PrintUsage();
             return -1;
         }
-        BOB12_RSA_KeyGen(b12rsa,1024);
-        BN_print_fp(stdout,b12rsa->n);
+        BOB12_RSA_KeyGen(b12rsa, 1024);
+        printf("n : ");
+        BN_print_fp(stdout, b12rsa->n);
         printf("\n");
-        BN_print_fp(stdout,b12rsa->e);
+        printf("e : ");
+        BN_print_fp(stdout, b12rsa->e);
         printf("\n");
-        BN_print_fp(stdout,b12rsa->d);
-    }else if(argc == 5){
-        if(strncmp(argv[1],"-e",2) && strncmp(argv[1],"-d",2)){
+        printf("d : ");
+        BN_print_fp(stdout, b12rsa->d);
+        printf("\n");
+    }
+    else if (argc == 5)
+    {
+        if (strncmp(argv[1], "-e", 2) && strncmp(argv[1], "-d", 2))
+        {
             PrintUsage();
             return -1;
         }
         BN_hex2bn(&b12rsa->n, argv[3]);
         BN_hex2bn(&in, argv[4]);
-        if(!strncmp(argv[1],"-e",2)){
+        if (!strncmp(argv[1], "-e", 2))
+        {
             BN_hex2bn(&b12rsa->e, argv[2]);
-            BOB12_RSA_Enc(out,in, b12rsa);
-        }else if(!strncmp(argv[1],"-d",2)){
+            printf("enc : ");
+            BOB12_RSA_Enc(out, in, b12rsa);
+        }
+        else if (!strncmp(argv[1], "-d", 2))
+        {
             BN_hex2bn(&b12rsa->d, argv[2]);
-            BOB12_RSA_Dec(out,in, b12rsa);
-        }else{
+            printf("dec : ");
+            BOB12_RSA_Dec(out, in, b12rsa);
+        }
+        else
+        {
             PrintUsage();
             return -1;
         }
-        BN_print_fp(stdout,out);
-    }else{
+        BN_print_fp(stdout, out);
+        printf("\n");
+    }
+    else
+    {
         PrintUsage();
         return -1;
     }
 
-    if(in != NULL) BN_free(in);
-    if(out != NULL) BN_free(out);
-    if(b12rsa!= NULL) BOB12_RSA_free(b12rsa);
+    if (in != NULL)
+        BN_free(in);
+    if (out != NULL)
+        BN_free(out);
+    if (b12rsa != NULL)
+        BOB12_RSA_free(b12rsa);
 
     return 0;
 }
