@@ -1,44 +1,40 @@
 #include "xeuclid.h"
+
 BIGNUM *XEuclid(BIGNUM *x, BIGNUM *y, const BIGNUM *a, const BIGNUM *b)
 {
-    BIGNUM *zero = BN_new();
-    BIGNUM *one = BN_new();
-    BIGNUM *temp1 = BN_new();
-    BIGNUM *temp2 = BN_new();
-    BIGNUM *quotient = BN_new();
-    BIGNUM *remainder = BN_new();
+    BIGNUM *gcd = BN_new();
+    BIGNUM *x1 = BN_new();
+    BIGNUM *y1 = BN_new();
+    BIGNUM *q = BN_new();
+    BIGNUM *r = BN_new();
+    BIGNUM *temp = BN_new();
 
-    BN_zero(zero);
-    BN_one(one);
-
-    BN_copy(x, zero);
-    BN_copy(y, one);
-
-    BIGNUM *aa = BN_dup(a);
-    BIGNUM *bb = BN_dup(b);
-
-    while (!BN_is_zero(bb))
+    if (BN_is_zero(b))
     {
-        BN_div(quotient, remainder, aa, bb, BN_CTX_new());
-        BN_copy(aa, bb);
-        BN_copy(bb, remainder);
+        BN_one(x);
+        BN_zero(y);
+        BN_copy(gcd, a);
+    }
+    else
+    {
+        BN_div(q, r, a, b, BN_CTX_new());
 
-        BN_copy(temp1, x);
-        BN_copy(x, y);
+        BIGNUM *recursive_gcd = XEuclid(x1, y1, b, r);
 
-        BN_mul(temp2, quotient, y, BN_CTX_new());
-        BN_sub(y, temp1, temp2);
+        BN_copy(x, y1);
+        BN_mul(temp, q, y1, BN_CTX_new());
+        BN_sub(y, x1, temp);
+
+        BN_copy(gcd, recursive_gcd);
     }
 
-    BN_free(zero);
-    BN_free(one);
-    BN_free(bb);
-    BN_free(temp1);
-    BN_free(temp2);
-    BN_free(quotient);
-    BN_free(remainder);
+    BN_free(temp);
+    BN_free(x1);
+    BN_free(y1);
+    BN_free(q);
+    BN_free(r);
 
-    return aa;
+    return gcd;
 }
 
 void printBN(const char *msg, const BIGNUM *a)
